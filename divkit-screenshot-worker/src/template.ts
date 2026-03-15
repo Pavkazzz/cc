@@ -8,11 +8,12 @@ function safeReplace(str: string, placeholder: string, value: string): string {
   return str.slice(0, idx) + value + str.slice(idx + placeholder.length);
 }
 
-export function buildHtml(divkitJson: object, width: number): string {
+export function buildHtml(divkitJson: object, width: number, background: string | null = null): string {
   let html = htmlTemplate;
   html = safeReplace(html, "{{DIVKIT_CSS}}", divkitCss);
   html = safeReplace(html, "{{DIVKIT_JS}}", divkitJs);
   html = safeReplace(html, "{{WIDTH}}", String(width));
   html = safeReplace(html, "{{DIVKIT_JSON}}", JSON.stringify(divkitJson));
+  html = safeReplace(html, "{{BACKGROUND}}", background ? `background-color: ${background};` : "");
   return html;
 }

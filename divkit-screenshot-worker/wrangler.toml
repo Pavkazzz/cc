@@ -24,3 +24,11 @@ fallthrough = true
 type = "Text"
 globs = ["**/*.txt"]
 fallthrough = true
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false

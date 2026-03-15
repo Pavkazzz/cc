@@ -1,10 +1,15 @@
 export async function computeCacheKey(
   json: unknown,
   width: number,
-  scale: number
+  height: number,
+  scale: number,
+  background: string | null = null
 ): Promise<string> {
+  const keyObj: Record<string, unknown> = { json, width, scale };
+  if (height !== 812) keyObj.height = height;
+  if (background !== null) keyObj.background = background;
   const payload = JSON.stringify(
-    { json, width, scale },
+    keyObj,
     (_key: string, value: unknown) => {
       if (value !== null && typeof value === "object" && !Array.isArray(value)) {
         return Object.keys(value as Record<string, unknown>)
