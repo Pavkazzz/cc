@@ -5,11 +5,12 @@ Cloudflare Worker that renders DivKit layout JSON to PNG via Browser Rendering A
 Two-tier cache: Cache API (L1 edge) + R2 (L2 persistent). Deployed on a subpath of an existing domain.
 
 ## Architecture
-- `src/index.ts` — Worker entry point, routing (`POST /preview/screenshot`, `GET /preview/health`), request validation
+- `src/index.ts` — Worker entry point, routing (`POST /preview/screenshot`, `GET /preview/health`, `GET /preview/requests`, `GET /preview/share/:hash`), request validation
 - `src/screenshot.ts` — Puppeteer-based screenshot capture via `@cloudflare/puppeteer`
 - `src/cache.ts` — Two-tier caching: Cache API (L1) + R2 (L2), background writes via `ctx.waitUntil()`
 - `src/template.ts` — Injects DivKit JSON + width into `static/divkit.html` template
 - `src/hash.ts` — SHA-256 deterministic cache key from `{ json, width, scale }`
+- `src/request-log.ts` — Request logging: stores DivKit JSON + PNG per request in R2 (`REQUEST_LOG` bucket), supports listing and sharing by hash
 - `static/divkit.html` — HTML shell that loads DivKit from CDN, renders client-side, signals completion via `data-rendered`
 
 ## Key technical decisions

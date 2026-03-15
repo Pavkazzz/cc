@@ -2,14 +2,22 @@ import { computeCacheKey } from "./hash";
 import { buildHtml } from "./template";
 import { getCached, setCached } from "./cache";
 import { takeScreenshot } from "./screenshot";
+import {
+  saveRequestLog,
+  listRequestLogs,
+  getRequestMeta,
+  getRequestScreenshot,
+} from "./request-log";
 import indexHtml from "../static/index.html";
 
 export interface Env {
   BROWSER: Fetcher;
   SCREENSHOT_CACHE: R2Bucket;
+  REQUEST_LOG: R2Bucket;
   DEFAULT_WIDTH: string;
   DEFAULT_SCALE: string;
   CACHE_TTL_SECONDS: string;
+  ADMIN_TOKEN: string;
 }
 
 interface ScreenshotRequest {
@@ -32,6 +40,13 @@ function validateRange(value: number, min: number, max: number, name: string): s
     return `${name} must be an integer between ${min} and ${max}`;
   }
   return null;
+}
+
+function checkAdminToken(request: Request, env: Env): boolean {
+  const url = new URL(request.url);
+  const token =
+    request.headers.get("X-Admin-Token") ?? url.searchParams.get("token");
+  return token === env.ADMIN_TOKEN;
 }
 
 async function handleScreenshot(
@@ -82,12 +97,18 @@ async function handleScreenshot(
 
   const cached = await getCached(cacheKey, env.SCREENSHOT_CACHE, ctx);
   if (cached) {
+    saveRequestLog(
+      env.REQUEST_LOG, ctx, cacheKey,
+      body.json, width, height, scale, background, cached.png
+    );
+
     return new Response(cached.png, {
       headers: {
         "Content-Type": "image/png",
         "Cache-Control": `public, max-age=${ttl}`,
         "X-Cache": "HIT",
         "X-Cache-Source": cached.source,
+        "X-Request-Hash": cacheKey,
       },
     });
   }
@@ -99,6 +120,11 @@ async function handleScreenshot(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Screenshot failed";
     console.error("Screenshot error:", message, err instanceof Error ? err.stack : "");
+    if (message.includes("429")) {
+      const res = jsonError("Rate limit exceeded, please retry later", 429);
+      res.headers.set("Retry-After", "8");
+      return res;
+    }
     if (message.includes("browser") || message.includes("Browser")) {
       return jsonError("Browser unavailable", 503);
     }
@@ -106,6 +132,10 @@ async function handleScreenshot(
   }
 
   setCached(cacheKey, png, env.SCREENSHOT_CACHE, ctx, ttl);
+  saveRequestLog(
+    env.REQUEST_LOG, ctx, cacheKey,
+    body.json, width, height, scale, background, png
+  );
 
   return new Response(png, {
     headers: {
@@ -113,6 +143,84 @@ async function handleScreenshot(
       "Cache-Control": `public, max-age=${ttl}`,
       "X-Cache": "MISS",
       "X-Cache-Source": "browser",
+      "X-Request-Hash": cacheKey,
+    },
+  });
+}
+
+async function handleRequests(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  if (request.method !== "GET") {
+    return jsonError("Method not allowed", 405);
+  }
+
+  if (!checkAdminToken(request, env)) {
+    return jsonError("Unauthorized", 401);
+  }
+
+  const url = new URL(request.url);
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  const limit = Math.min(
+    parseInt(url.searchParams.get("limit") ?? "50", 10) || 50,
+    100
+  );
+
+  const result = await listRequestLogs(env.REQUEST_LOG, cursor, limit);
+
+  return new Response(
+    JSON.stringify({
+      requests: result.entries.map((e) => ({
+        hash: e.hash,
+        width: e.width,
+        height: e.height,
+        scale: e.scale,
+        background: e.background,
+        createdAt: e.createdAt,
+      })),
+      cursor: result.cursor ?? null,
+    }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+}
+
+async function handleShareMeta(
+  hash: string,
+  env: Env
+): Promise<Response> {
+  const entry = await getRequestMeta(env.REQUEST_LOG, hash);
+  if (!entry) {
+    return jsonError("Not found", 404);
+  }
+
+  return new Response(
+    JSON.stringify({
+      hash: entry.hash,
+      json: entry.json,
+      width: entry.width,
+      height: entry.height,
+      scale: entry.scale,
+      background: entry.background,
+      createdAt: entry.createdAt,
+    }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+}
+
+async function handleShareScreenshot(
+  hash: string,
+  env: Env
+): Promise<Response> {
+  const png = await getRequestScreenshot(env.REQUEST_LOG, hash);
+  if (!png) {
+    return jsonError("Not found", 404);
+  }
+
+  return new Response(png, {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400",
     },
   });
 }
@@ -122,6 +230,8 @@ function handleHealth(): Response {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+const SHARE_PREFIX = "/preview/share/";
 
 export default {
   async fetch(
@@ -133,6 +243,23 @@ export default {
 
     if (url.pathname === "/preview/screenshot") {
       return handleScreenshot(request, env, ctx);
+    }
+
+    if (url.pathname === "/preview/requests") {
+      return handleRequests(request, env);
+    }
+
+    if (url.pathname.startsWith(SHARE_PREFIX)) {
+      const rest = url.pathname.slice(SHARE_PREFIX.length);
+      const match = rest.match(/^([a-f0-9]{64})(\/screenshot)?$/);
+      if (!match) {
+        return jsonError("Invalid hash", 400);
+      }
+      const hash = match[1];
+      if (match[2] === "/screenshot") {
+        return handleShareScreenshot(hash, env);
+      }
+      return handleShareMeta(hash, env);
     }
 
     if (url.pathname === "/preview/health" && request.method === "GET") {
