@@ -10,6 +10,10 @@ binding = "BROWSER"
 binding = "SCREENSHOT_CACHE"
 bucket_name = "divkit-screenshots"
 
+[[r2_buckets]]
+binding = "REQUEST_LOG"
+bucket_name = "divkit-request-log"
+
 [vars]
 DEFAULT_WIDTH = "375"
 DEFAULT_SCALE = "2"
