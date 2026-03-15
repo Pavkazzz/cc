@@ -18,7 +18,9 @@ CACHE_TTL_SECONDS = "3600"
 [[rules]]
 type = "Text"
 globs = ["**/*.html"]
+fallthrough = true
 
 [[rules]]
 type = "Text"
 globs = ["**/*.txt"]
+fallthrough = true
