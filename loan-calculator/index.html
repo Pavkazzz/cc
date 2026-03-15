@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор займа — 700 000 ₽</title>
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --card: #fff;
+    --accent: #1a73e8;
+    --text: #222;
+    --muted: #666;
+    --border: #e0e0e0;
+    --highlight: #e8f0fe;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 20px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+  .params {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+  .params span { font-weight: 600; color: var(--text); }
+  .section { margin-bottom: 32px; }
+  h2 {
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 8px;
+  }
+  th {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  th:first-child { text-align: center; }
+  td {
+    padding: 10px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+  }
+  td:first-child {
+    text-align: center;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--highlight); }
+  .best { background: #e6f4ea; }
+  .best td { background: #e6f4ea; }
+  .formula-note {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--highlight);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .formula-note code {
+    background: #d2e3fc;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+  }
+  @media (max-width: 600px) {
+    th, td { padding: 8px 8px; font-size: 0.82rem; }
+    h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Калькулятор займа</h1>
+  <p class="params">
+    Сумма: <span>700 000 ₽</span> &middot;
+    Срок: <span>12 месяцев</span> &middot;
+    Ставки: <span>15,5% &rarr; 1,5%</span> (шаг 2%)
+  </p>
+
+  <div class="section">
+    <h2>Сценарий 1 — Возврат в конце срока (простой процент)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ставка</th>
+          <th>Проценты</th>
+          <th>Всего к возврату</th>
+          <th>Переплата</th>
+        </tr>
+      </thead>
+      <tbody id="simple-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Сценарий 2 — Аннуитетные платежи</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ставка</th>
+          <th>Ежемес. платёж</th>
+          <th>Всего выплат</th>
+          <th>Переплата</th>
+        </tr>
+      </thead>
+      <tbody id="annuity-body"></tbody>
+    </table>
+  </div>
+
+  <div class="formula-note">
+    <strong>Формулы:</strong><br>
+    Простой процент: <code>Проценты = S &times; ставка &times; срок_лет</code><br>
+    Аннуитет: <code>P = S &times; r(1+r)<sup>n</sup> / ((1+r)<sup>n</sup> &minus; 1)</code>,
+    где <code>r = ставка / 12</code>, <code>n = 12</code>
+  </div>
+</div>
+
+<script>
+(function () {
+  const S = 700000;
+  const n = 12;
+  const years = 1;
+  const rates = [15.5, 13.5, 11.5, 9.5, 7.5, 5.5, 3.5, 1.5];
+
+  function fmt(v) {
+    return Math.round(v).toLocaleString('ru-RU') + ' ₽';
+  }
+
+  function fmtRate(rate) {
+    return rate.toFixed(1).replace('.', ',') + '%';
+  }
+
+  // Сценарий 1: простой процент
+  const simpleBody = document.getElementById('simple-body');
+  rates.forEach(function (rate) {
+    var interest = S * (rate / 100) * years;
+    var total = S + interest;
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + fmtRate(rate) + '</td>' +
+      '<td>' + fmt(interest) + '</td>' +
+      '<td>' + fmt(total) + '</td>' +
+      '<td>' + fmt(interest) + '</td>';
+    simpleBody.appendChild(tr);
+  });
+
+  // Сценарий 2: аннуитет
+  const annuityBody = document.getElementById('annuity-body');
+  rates.forEach(function (rate) {
+    var r = rate / 100 / 12;
+    var payment, totalPaid;
+    if (r === 0) {
+      payment = S / n;
+      totalPaid = S;
+    } else {
+      var rn = Math.pow(1 + r, n);
+      payment = S * (r * rn) / (rn - 1);
+      totalPaid = payment * n;
+    }
+    var overpay = totalPaid - S;
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + fmtRate(rate) + '</td>' +
+      '<td>' + fmt(payment) + '</td>' +
+      '<td>' + fmt(totalPaid) + '</td>' +
+      '<td>' + fmt(overpay) + '</td>';
+    annuityBody.appendChild(tr);
+  });
+})();
+</script>
+</body>
+</html>
