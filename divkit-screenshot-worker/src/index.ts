@@ -73,12 +73,12 @@ async function handleScreenshot(
   if (scaleErr) return jsonError(scaleErr, 400);
 
   const background = body.background ?? null;
-  if (background !== null && !/^#[\da-fA-F]{3,8}$/.test(background)) {
+  if (background !== null && !/^#([\da-fA-F]{3}|[\da-fA-F]{4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/.test(background)) {
     return jsonError("background must be a valid hex color (e.g. #fff, #ffffff, #ffffffff)", 400);
   }
 
   const ttl = parseInt(env.CACHE_TTL_SECONDS, 10);
-  const cacheKey = await computeCacheKey(body.json, width, scale, background);
+  const cacheKey = await computeCacheKey(body.json, width, height, scale, background);
 
   const cached = await getCached(cacheKey, env.SCREENSHOT_CACHE, ctx);
   if (cached) {
