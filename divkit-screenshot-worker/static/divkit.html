@@ -3,20 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://unpkg.com/@divkitframework/divkit/dist/client.css">
-  <script src="https://unpkg.com/@divkitframework/divkit/dist/browser.js"></script>
+  <style>{{DIVKIT_CSS}}</style>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { width: {{WIDTH}}px; overflow: hidden; }
+    #root { width: 100%; }
   </style>
 </head>
 <body>
   <div id="root"></div>
+  <script>{{DIVKIT_JS}}</script>
   <script>
     try {
       const json = {{DIVKIT_JSON}};
-      window.__divkit = DivKit.render({
-        id: 'divkit-preview',
+      window.Ya.DivKit.render({
+        id: 'root',
         target: document.getElementById('root'),
         json: json,
         onError(details) { console.error('DivKit error:', details.error); }
