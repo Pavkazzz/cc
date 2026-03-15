@@ -91,6 +91,7 @@ async function handleScreenshot(
     png = await takeScreenshot(env.BROWSER, html, width, height, scale);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Screenshot failed";
+    console.error("Screenshot error:", message, err instanceof Error ? err.stack : "");
     if (message.includes("browser") || message.includes("Browser")) {
       return jsonError("Browser unavailable", 503);
     }
