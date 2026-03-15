@@ -1,10 +1,7 @@
 """Shared fixtures for DivKit preview tests."""
 
-import asyncio
-import json
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -68,22 +65,12 @@ async def screenshot_service():
 
 
 @pytest.fixture
-def mock_pool() -> MagicMock:
-    """Mock asyncpg pool."""
-    pool = MagicMock()
-    pool.fetchrow = AsyncMock(return_value=None)
-    pool.close = AsyncMock()
-    return pool
-
-
-@pytest.fixture
-def app(screenshot_service, mock_pool):
-    """Full aiohttp test app with real ScreenshotService and mocked DB."""
+def app(screenshot_service):
+    """Full aiohttp test app with real ScreenshotService."""
     from aiohttp import web
     from handlers import preview_handler
 
     application = web.Application()
     application["screenshot_service"] = screenshot_service
-    application["db_pool"] = mock_pool
-    application.router.add_get("/{id}/preview.png", preview_handler)
+    application.router.add_post("/preview.png", preview_handler)
     return application

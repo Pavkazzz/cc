@@ -5,16 +5,13 @@ import logging
 
 from aiohttp import web
 
-from db import get_layout
 from screenshot_service import ScreenshotService
 
 logger = logging.getLogger(__name__)
 
 
 async def preview_handler(request: web.Request) -> web.Response:
-    """GET /{id}/preview.png — render a DivKit layout as PNG."""
-    layout_id: str = request.match_info["id"]
-
+    """POST /preview.png — render a DivKit layout JSON from body as PNG."""
     # Parse and validate query params
     width = _parse_int_param(request, "width", default=375, min_val=320, max_val=1440)
     if isinstance(width, web.Response):
@@ -24,21 +21,24 @@ async def preview_handler(request: web.Request) -> web.Response:
     if isinstance(scale, web.Response):
         return scale
 
-    # Fetch layout from DB
-    pool = request.app["db_pool"]
-    layout = await get_layout(pool, layout_id)
-    if layout is None:
-        return web.json_response({"error": "Layout not found"}, status=404)
+    # Read DivKit JSON from request body
+    try:
+        divkit_json: dict = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body"}, status=400)
+
+    if not isinstance(divkit_json, dict):
+        return web.json_response({"error": "Body must be a JSON object"}, status=400)
 
     # Take screenshot
     screenshot_service: ScreenshotService = request.app["screenshot_service"]
     try:
-        png_bytes = await screenshot_service.capture(layout, width=width, scale=scale)
+        png_bytes = await screenshot_service.capture(divkit_json, width=width, scale=scale)
     except asyncio.TimeoutError:
-        logger.error("Screenshot timed out for layout %s", layout_id)
+        logger.error("Screenshot timed out")
         return web.json_response({"error": "Screenshot timed out"}, status=500)
     except Exception:
-        logger.exception("Screenshot failed for layout %s", layout_id)
+        logger.exception("Screenshot failed")
         return web.json_response({"error": "Screenshot failed"}, status=500)
 
     return web.Response(

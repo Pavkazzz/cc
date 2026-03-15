@@ -28,7 +28,7 @@ RUN mkdir -p static/divkit /tmp/divkit-pkg && \
 RUN apt-get purge -y npm && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Copy application code
-COPY app.py handlers.py screenshot_service.py db.py ./
+COPY app.py handlers.py screenshot_service.py ./
 
 EXPOSE 8080
 

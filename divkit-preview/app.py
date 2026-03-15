@@ -3,7 +3,6 @@
 import logging
 import os
 
-import asyncpg
 from aiohttp import web
 
 from handlers import preview_handler
@@ -17,11 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 async def on_startup(app: web.Application) -> None:
-    """Create DB pool and start screenshot service."""
-    database_url = os.environ["DATABASE_URL"]
-    app["db_pool"] = await asyncpg.create_pool(database_url)
-    logger.info("Database pool created")
-
+    """Start screenshot service."""
     concurrency = int(os.environ.get("SCREENSHOT_CONCURRENCY", "5"))
     service = ScreenshotService(concurrency=concurrency)
     await service.start()
@@ -29,15 +24,10 @@ async def on_startup(app: web.Application) -> None:
 
 
 async def on_shutdown(app: web.Application) -> None:
-    """Stop screenshot service and close DB pool."""
+    """Stop screenshot service."""
     service: ScreenshotService | None = app.get("screenshot_service")
     if service:
         await service.stop()
-
-    pool = app.get("db_pool")
-    if pool:
-        await pool.close()
-        logger.info("Database pool closed")
 
 
 def create_app() -> web.Application:
@@ -45,7 +35,7 @@ def create_app() -> web.Application:
     app = web.Application()
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
-    app.router.add_get("/{id}/preview.png", preview_handler)
+    app.router.add_post("/preview.png", preview_handler)
     return app
 
 
