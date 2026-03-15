@@ -177,10 +177,10 @@ describe("Request listing", () => {
     vi.spyOn(caches.default, "put").mockResolvedValue(undefined);
   });
 
-  it("GET /preview/requests without token returns 401", async () => {
+  it("GET /preview/requests/api without token returns 401", async () => {
     const env = createMockEnv();
     const ctx = createMockCtx();
-    const req = new Request("https://example.com/preview/requests", {
+    const req = new Request("https://example.com/preview/requests/api", {
       method: "GET",
     });
 
@@ -188,10 +188,10 @@ describe("Request listing", () => {
     expect(res.status).toBe(401);
   });
 
-  it("GET /preview/requests with wrong token returns 401", async () => {
+  it("GET /preview/requests/api with wrong token returns 401", async () => {
     const env = createMockEnv();
     const ctx = createMockCtx();
-    const req = new Request("https://example.com/preview/requests?token=wrong", {
+    const req = new Request("https://example.com/preview/requests/api?token=wrong", {
       method: "GET",
     });
 
@@ -199,11 +199,11 @@ describe("Request listing", () => {
     expect(res.status).toBe(401);
   });
 
-  it("GET /preview/requests with valid token returns 200", async () => {
+  it("GET /preview/requests/api with valid token returns 200", async () => {
     const env = createMockEnv();
     const ctx = createMockCtx();
     const req = new Request(
-      "https://example.com/preview/requests?token=test-secret-token",
+      "https://example.com/preview/requests/api?token=test-secret-token",
       { method: "GET" }
     );
 
@@ -214,10 +214,10 @@ describe("Request listing", () => {
     expect(body.cursor).toBeNull();
   });
 
-  it("GET /preview/requests with valid X-Admin-Token header returns 200", async () => {
+  it("GET /preview/requests/api with valid X-Admin-Token header returns 200", async () => {
     const env = createMockEnv();
     const ctx = createMockCtx();
-    const req = new Request("https://example.com/preview/requests", {
+    const req = new Request("https://example.com/preview/requests/api", {
       method: "GET",
       headers: { "X-Admin-Token": "test-secret-token" },
     });
@@ -226,16 +226,42 @@ describe("Request listing", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /preview/requests returns 405", async () => {
+  it("POST /preview/requests/api returns 405", async () => {
     const env = createMockEnv();
     const ctx = createMockCtx();
     const req = new Request(
-      "https://example.com/preview/requests?token=test-secret-token",
+      "https://example.com/preview/requests/api?token=test-secret-token",
       { method: "POST" }
     );
 
     const res = await worker.fetch(req, env, ctx);
     expect(res.status).toBe(405);
+  });
+
+  it("GET /preview/requests with valid token returns HTML page", async () => {
+    const env = createMockEnv();
+    const ctx = createMockCtx();
+    const req = new Request(
+      "https://example.com/preview/requests?token=test-secret-token",
+      { method: "GET" }
+    );
+
+    const res = await worker.fetch(req, env, ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("text/html;charset=utf-8");
+    const html = await res.text();
+    expect(html).toContain("Request Log");
+  });
+
+  it("GET /preview/requests without token returns 401", async () => {
+    const env = createMockEnv();
+    const ctx = createMockCtx();
+    const req = new Request("https://example.com/preview/requests", {
+      method: "GET",
+    });
+
+    const res = await worker.fetch(req, env, ctx);
+    expect(res.status).toBe(401);
   });
 });
 
