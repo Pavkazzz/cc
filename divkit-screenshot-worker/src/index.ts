@@ -2,6 +2,7 @@ import { computeCacheKey } from "./hash";
 import { buildHtml } from "./template";
 import { getCached, setCached } from "./cache";
 import { takeScreenshot } from "./screenshot";
+import indexHtml from "../static/index.html";
 
 export interface Env {
   BROWSER: Fetcher;
@@ -130,6 +131,12 @@ export default {
 
     if (url.pathname === "/preview/health" && request.method === "GET") {
       return handleHealth();
+    }
+
+    if (url.pathname === "/preview" || url.pathname === "/preview/") {
+      return new Response(indexHtml, {
+        headers: { "Content-Type": "text/html;charset=utf-8" },
+      });
     }
 
     return jsonError("Not found", 404);
