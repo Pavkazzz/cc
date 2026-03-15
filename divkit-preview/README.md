@@ -48,9 +48,9 @@ curl -X POST http://localhost:8080/preview.png \
 ## Development
 
 ```bash
-pip install -r requirements.txt
-playwright install --with-deps chromium
-pytest tests/
+uv sync --extra test
+uv run playwright install --with-deps chromium
+uv run pytest tests/
 ```
 
 ## Docker

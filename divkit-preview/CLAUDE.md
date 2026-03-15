@@ -19,10 +19,11 @@ Uses headless Chromium via Playwright to render DivKit's client-side JS, then sc
 - No Node.js runtime needed — only the static browser.js and client.css files
 
 ## Commands
-- Run tests: `cd divkit-preview && pytest tests/`
-- Run single test: `cd divkit-preview && pytest tests/test_handlers.py::test_preview_success`
+- Install deps: `cd divkit-preview && uv sync --extra test`
+- Run tests: `cd divkit-preview && uv run pytest tests/`
+- Run single test: `cd divkit-preview && uv run pytest tests/test_handlers.py::test_preview_success`
 - Build Docker: `docker build -t divkit-preview divkit-preview/`
-- Run locally: `cd divkit-preview && python -m app` (needs Playwright + Chromium installed)
+- Run locally: `cd divkit-preview && uv run python -m app` (needs Playwright + Chromium installed)
 
 ## Code style
 - Python 3.12, type hints everywhere

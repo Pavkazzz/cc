@@ -6,18 +6,20 @@ RUN npm pack @divkitframework/divkit && \
     tar xzf divkitframework-divkit-*.tgz --strip-components=1 -C /divkit-assets
 
 # Stage 2: Runtime
-FROM python:3.12-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies via uv
+COPY pyproject.toml .
+RUN uv sync --no-dev --no-install-project
 
 # Install Playwright Chromium with system dependencies
-RUN playwright install --with-deps chromium
+RUN uv run playwright install --with-deps chromium
 
 # Copy DivKit static assets from builder stage
 COPY --from=assets /divkit-assets/dist/client.css static/divkit/client.css
@@ -28,4 +30,4 @@ COPY app.py handlers.py screenshot_service.py ./
 
 EXPOSE 8080
 
-CMD ["python", "-m", "app"]
+CMD ["uv", "run", "python", "-m", "app"]
