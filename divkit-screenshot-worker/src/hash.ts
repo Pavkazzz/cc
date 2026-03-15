@@ -5,7 +5,8 @@ export async function computeCacheKey(
   scale: number,
   background: string | null = null
 ): Promise<string> {
-  const keyObj: Record<string, unknown> = { json, width, height, scale };
+  const keyObj: Record<string, unknown> = { json, width, scale };
+  if (height !== 812) keyObj.height = height;
   if (background !== null) keyObj.background = background;
   const payload = JSON.stringify(
     keyObj,

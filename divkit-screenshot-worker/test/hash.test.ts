@@ -40,6 +40,13 @@ describe("computeCacheKey", () => {
     expect(a).not.toBe(b);
   });
 
+  it("default height 812 omitted from key for backwards compat", async () => {
+    // Key with default height should match the legacy {json, width, scale} shape
+    const key = await computeCacheKey(sampleJson, 375, 812, 2);
+    const keyAgain = await computeCacheKey(sampleJson, 375, 812, 2, null);
+    expect(key).toBe(keyAgain);
+  });
+
   it("null background matches no-background call", async () => {
     const a = await computeCacheKey(sampleJson, 375, 812, 2);
     const b = await computeCacheKey(sampleJson, 375, 812, 2, null);
