@@ -6,7 +6,8 @@ Collection of self-hosted microservices.
 
 | Service | Description |
 |---|---|
-| [divkit-preview](divkit-preview/) | Renders DivKit layouts to PNG screenshots via HTTP API |
+| [divkit-preview](divkit-preview/) | Renders DivKit layouts to PNG screenshots via HTTP API (self-hosted, Docker) |
+| [divkit-screenshot-worker](divkit-screenshot-worker/) | Renders DivKit layouts to PNG via Cloudflare Worker + Browser Rendering |
 
 ## Quick start
 

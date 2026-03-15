@@ -1,0 +1,76 @@
+name: Worker CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "divkit-screenshot-worker/**"
+      - ".github/workflows/worker-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "divkit-screenshot-worker/**"
+      - ".github/workflows/worker-ci.yml"
+
+defaults:
+  run:
+    working-directory: divkit-screenshot-worker
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: divkit-screenshot-worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: divkit-screenshot-worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: divkit-screenshot-worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
