@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from screenshot_service import ScreenshotService
 
-
 SAMPLE_DIVKIT_JSON: dict = {
     "card": {
         "log_id": "test",
@@ -73,6 +72,7 @@ def image_divkit_json() -> dict:
 def _playwright_available() -> bool:
     try:
         from playwright.async_api import async_playwright  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -93,6 +93,7 @@ async def screenshot_service():
 def app(screenshot_service):
     """Full aiohttp test app with real ScreenshotService."""
     from aiohttp import web
+
     from handlers import preview_handler
 
     application = web.Application()

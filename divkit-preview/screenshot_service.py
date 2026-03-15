@@ -5,7 +5,7 @@ import json
 import logging
 from pathlib import Path
 
-from playwright.async_api import async_playwright, Browser, Playwright
+from playwright.async_api import Browser, Playwright, async_playwright
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,8 @@ def _build_html_template(css_content: str, js_content: str) -> str:
     The template expects a global `DIVKIT_JSON` variable to be set
     via a <script> tag before this template's own script runs.
     """
-    return """<!DOCTYPE html>
+    return (
+        """<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -26,13 +27,17 @@ def _build_html_template(css_content: str, js_content: str) -> str:
 <style>
 body { margin: 0; }
 #root { width: 100%; }
-""" + css_content + """
+"""
+        + css_content
+        + """
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-""" + js_content + """
+"""
+        + js_content
+        + """
 </script>
 <script>
 window.DivKit.render({
@@ -43,6 +48,7 @@ window.DivKit.render({
 </script>
 </body>
 </html>"""
+    )
 
 
 class ScreenshotService:
@@ -81,7 +87,7 @@ class ScreenshotService:
 
     async def capture(
         self,
-        divkit_json: dict,
+        divkit_json: dict[str, object],
         width: int = 375,
         scale: float = 2.0,
     ) -> bytes:
@@ -97,7 +103,7 @@ class ScreenshotService:
 
     async def _do_capture(
         self,
-        divkit_json: dict,
+        divkit_json: dict[str, object],
         width: int,
         scale: float,
     ) -> bytes:
@@ -123,4 +129,4 @@ class ScreenshotService:
             await page.close()
             await context.close()
 
-        return png_bytes
+        return bytes(png_bytes)

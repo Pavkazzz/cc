@@ -1,6 +1,5 @@
 """aiohttp request handlers for DivKit preview."""
 
-import asyncio
 import logging
 
 from aiohttp import web
@@ -23,7 +22,7 @@ async def preview_handler(request: web.Request) -> web.Response:
 
     # Read DivKit JSON from request body
     try:
-        divkit_json: dict = await request.json()
+        divkit_json: dict[str, object] = await request.json()
     except Exception:
         return web.json_response({"error": "Invalid JSON body"}, status=400)
 
@@ -34,7 +33,7 @@ async def preview_handler(request: web.Request) -> web.Response:
     screenshot_service: ScreenshotService = request.app["screenshot_service"]
     try:
         png_bytes = await screenshot_service.capture(divkit_json, width=width, scale=scale)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.error("Screenshot timed out")
         return web.json_response({"error": "Screenshot timed out"}, status=500)
     except Exception:

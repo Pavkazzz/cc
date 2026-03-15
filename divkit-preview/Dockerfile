@@ -23,7 +23,7 @@ RUN uv run playwright install --with-deps chromium
 
 # Copy DivKit static assets from builder stage
 COPY --from=assets /divkit-assets/dist/client.css static/divkit/client.css
-COPY --from=assets /divkit-assets/dist/browser.js static/divkit/browser.js
+COPY --from=assets /divkit-assets/dist/browser/client.js static/divkit/browser.js
 
 # Copy application code
 COPY app.py handlers.py screenshot_service.py ./

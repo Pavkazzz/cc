@@ -6,9 +6,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_capture_returns_png_bytes(
-    screenshot_service, sample_divkit_json
-) -> None:
+async def test_capture_returns_png_bytes(screenshot_service, sample_divkit_json) -> None:
     """Capture with sample JSON returns valid PNG bytes."""
     result = await screenshot_service.capture(sample_divkit_json)
     assert isinstance(result, bytes)
@@ -16,9 +14,7 @@ async def test_capture_returns_png_bytes(
 
 
 @pytest.mark.asyncio
-async def test_capture_custom_width(
-    screenshot_service, sample_divkit_json
-) -> None:
+async def test_capture_custom_width(screenshot_service, sample_divkit_json) -> None:
     """Capture with width=768 returns valid PNG."""
     result = await screenshot_service.capture(sample_divkit_json, width=768)
     assert isinstance(result, bytes)
@@ -39,9 +35,7 @@ async def test_capture_invalid_json(screenshot_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_capture_image_div(
-    screenshot_service, image_divkit_json
-) -> None:
+async def test_capture_image_div(screenshot_service, image_divkit_json) -> None:
     """Capture a layout with an image div — waits for network, returns valid PNG."""
     result = await screenshot_service.capture(image_divkit_json)
     assert isinstance(result, bytes)
@@ -51,14 +45,9 @@ async def test_capture_image_div(
 
 
 @pytest.mark.asyncio
-async def test_concurrent_captures(
-    screenshot_service, sample_divkit_json
-) -> None:
+async def test_concurrent_captures(screenshot_service, sample_divkit_json) -> None:
     """Launch 5 captures simultaneously — all should succeed."""
-    tasks = [
-        screenshot_service.capture(sample_divkit_json)
-        for _ in range(5)
-    ]
+    tasks = [screenshot_service.capture(sample_divkit_json) for _ in range(5)]
     results = await asyncio.gather(*tasks)
     assert len(results) == 5
     for result in results:
