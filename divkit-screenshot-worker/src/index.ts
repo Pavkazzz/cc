@@ -9,6 +9,7 @@ import {
   getRequestScreenshot,
 } from "./request-log";
 import indexHtml from "../static/index.html";
+import requestsHtml from "../static/requests.html";
 
 export interface Env {
   BROWSER: Fetcher;
@@ -245,8 +246,16 @@ export default {
       return handleScreenshot(request, env, ctx);
     }
 
-    if (url.pathname === "/preview/requests") {
+    if (url.pathname === "/preview/requests/api") {
       return handleRequests(request, env);
+    }
+
+    if (url.pathname === "/preview/requests") {
+      if (request.method !== "GET") return jsonError("Method not allowed", 405);
+      if (!checkAdminToken(request, env)) return jsonError("Unauthorized", 401);
+      return new Response(requestsHtml, {
+        headers: { "Content-Type": "text/html;charset=utf-8" },
+      });
     }
 
     if (url.pathname.startsWith(SHARE_PREFIX)) {

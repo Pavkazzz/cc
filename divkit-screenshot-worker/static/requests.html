@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request Log</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+    .error { background: #fdecea; color: #d32f2f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .empty { text-align: center; color: #888; padding: 48px 0; font-size: 15px; }
+    .entry { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; overflow: hidden; }
+    .entry-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; user-select: none; }
+    .entry-header:hover { background: #fafafa; }
+    .arrow { font-size: 12px; color: #999; transition: transform 0.15s; }
+    .entry.open .arrow { transform: rotate(90deg); }
+    .entry-hash { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13px; color: #4a90d9; }
+    .entry-meta { font-size: 12px; color: #888; margin-left: auto; display: flex; gap: 16px; }
+    .entry-body { display: none; }
+    .entry.open .entry-body { display: grid; grid-template-columns: 1fr 1fr; }
+    .json-panel { padding: 16px 20px; border-right: 1px solid #f0f0f0; overflow: auto; max-height: 600px; }
+    .json-panel pre { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+    .img-panel { padding: 16px 20px; display: flex; flex-direction: column; align-items: center; }
+    .img-panel img { max-width: 100%; border: 1px solid #eee; border-radius: 4px; background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 50% / 16px 16px; }
+    .share-link { margin-top: 10px; font-size: 12px; }
+    .share-link a { color: #4a90d9; text-decoration: none; }
+    .share-link a:hover { text-decoration: underline; }
+    .load-more { display: block; margin: 20px auto; padding: 10px 32px; border: none; border-radius: 6px; background: #4a90d9; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .load-more:hover { background: #3a7bc8; }
+    .load-more:disabled { background: #a0c4e8; cursor: not-allowed; }
+    .loading { text-align: center; color: #888; padding: 32px 0; font-size: 14px; }
+    @media (max-width: 768px) {
+      .entry.open .entry-body { grid-template-columns: 1fr; }
+      .json-panel { border-right: none; border-bottom: 1px solid #f0f0f0; max-height: 300px; }
+      .entry-meta { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Request Log</h1>
+    <div id="content"><div class="loading">Loading...</div></div>
+    <div id="footer"></div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const content = document.getElementById('content');
+    const footer = document.getElementById('footer');
+    let nextCursor = null;
+
+    if (!token) {
+      content.innerHTML = '<div class="error">Missing token parameter in URL.</div>';
+    } else {
+      loadPage();
+    }
+
+    async function loadPage(cursor) {
+      const qs = new URLSearchParams({ token });
+      if (cursor) qs.set('cursor', cursor);
+
+      let data;
+      try {
+        const resp = await fetch('/preview/requests/api?' + qs.toString());
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: resp.statusText }));
+          content.innerHTML = `<div class="error">Error ${resp.status}: ${err.error}</div>`;
+          return;
+        }
+        data = await resp.json();
+      } catch (e) {
+        content.innerHTML = `<div class="error">Network error: ${e.message}</div>`;
+        return;
+      }
+
+      if (!cursor) {
+        content.innerHTML = '';
+      }
+
+      if (data.requests.length === 0 && !cursor) {
+        content.innerHTML = '<div class="empty">No requests logged yet.</div>';
+        return;
+      }
+
+      for (const entry of data.requests) {
+        content.appendChild(buildEntry(entry));
+      }
+
+      nextCursor = data.cursor;
+      footer.innerHTML = '';
+      if (nextCursor) {
+        const btn = document.createElement('button');
+        btn.className = 'load-more';
+        btn.textContent = 'Load more';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.textContent = 'Loading...';
+          await loadPage(nextCursor);
+        });
+        footer.appendChild(btn);
+      }
+    }
+
+    function buildEntry(entry) {
+      const el = document.createElement('div');
+      el.className = 'entry';
+
+      const shortHash = entry.hash.slice(0, 16) + '...';
+      const date = new Date(entry.createdAt).toLocaleString();
+      const dims = `${entry.width}x${entry.height} @${entry.scale}x`;
+
+      el.innerHTML = `
+        <div class="entry-header">
+          <span class="arrow">&#9654;</span>
+          <span class="entry-hash" title="${entry.hash}">${shortHash}</span>
+          <span class="entry-meta">
+            <span>${dims}</span>
+            <span>${date}</span>
+          </span>
+        </div>
+        <div class="entry-body">
+          <div class="json-panel"><div class="loading">Loading JSON...</div></div>
+          <div class="img-panel">
+            <img src="/preview/share/${entry.hash}/screenshot" alt="Screenshot" loading="lazy">
+            <div class="share-link">
+              <a href="/preview/share/${entry.hash}" target="_blank">Share JSON</a>
+              &middot;
+              <a href="/preview/share/${entry.hash}/screenshot" target="_blank">Share image</a>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const header = el.querySelector('.entry-header');
+      const jsonPanel = el.querySelector('.json-panel');
+      let loaded = false;
+
+      header.addEventListener('click', async () => {
+        el.classList.toggle('open');
+        if (!loaded && el.classList.contains('open')) {
+          loaded = true;
+          try {
+            const resp = await fetch('/preview/share/' + entry.hash);
+            if (!resp.ok) {
+              jsonPanel.innerHTML = '<div class="error">Failed to load</div>';
+              return;
+            }
+            const meta = await resp.json();
+            jsonPanel.innerHTML = '<pre></pre>';
+            jsonPanel.querySelector('pre').textContent = JSON.stringify(meta.json, null, 2);
+          } catch (e) {
+            jsonPanel.innerHTML = `<div class="error">${e.message}</div>`;
+          }
+        }
+      });
+
+      return el;
+    }
+  </script>
+</body>
+</html>
