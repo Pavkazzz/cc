@@ -121,7 +121,9 @@ async function handleScreenshot(
     const message = err instanceof Error ? err.message : "Screenshot failed";
     console.error("Screenshot error:", message, err instanceof Error ? err.stack : "");
     if (message.includes("429")) {
-      return jsonError("Rate limit exceeded, please retry later", 429);
+      const res = jsonError("Rate limit exceeded, please retry later", 429);
+      res.headers.set("Retry-After", "8");
+      return res;
     }
     if (message.includes("browser") || message.includes("Browser")) {
       return jsonError("Browser unavailable", 503);
