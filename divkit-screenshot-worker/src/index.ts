@@ -17,6 +17,7 @@ interface ScreenshotRequest {
   width?: number;
   height?: number;
   scale?: number;
+  background?: string;
 }
 
 function jsonError(message: string, status: number): Response {
@@ -71,8 +72,13 @@ async function handleScreenshot(
   const scaleErr = validateRange(scale, 1, 3, "scale");
   if (scaleErr) return jsonError(scaleErr, 400);
 
+  const background = body.background ?? null;
+  if (background !== null && !/^#[\da-fA-F]{3,8}$/.test(background)) {
+    return jsonError("background must be a valid hex color (e.g. #fff, #ffffff, #ffffffff)", 400);
+  }
+
   const ttl = parseInt(env.CACHE_TTL_SECONDS, 10);
-  const cacheKey = await computeCacheKey(body.json, width, scale);
+  const cacheKey = await computeCacheKey(body.json, width, scale, background);
 
   const cached = await getCached(cacheKey, env.SCREENSHOT_CACHE, ctx);
   if (cached) {
@@ -88,7 +94,7 @@ async function handleScreenshot(
 
   let png: ArrayBuffer;
   try {
-    const html = buildHtml(body.json, width);
+    const html = buildHtml(body.json, width, background);
     png = await takeScreenshot(env.BROWSER, html, width, height, scale);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Screenshot failed";
