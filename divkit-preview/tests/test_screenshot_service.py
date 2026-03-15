@@ -39,6 +39,18 @@ async def test_capture_invalid_json(screenshot_service) -> None:
 
 
 @pytest.mark.asyncio
+async def test_capture_image_div(
+    screenshot_service, image_divkit_json
+) -> None:
+    """Capture a layout with an image div — waits for network, returns valid PNG."""
+    result = await screenshot_service.capture(image_divkit_json)
+    assert isinstance(result, bytes)
+    assert result[:4] == b"\x89PNG"
+    # Image layout should produce a larger screenshot than an empty page
+    assert len(result) > 100
+
+
+@pytest.mark.asyncio
 async def test_concurrent_captures(
     screenshot_service, sample_divkit_json
 ) -> None:

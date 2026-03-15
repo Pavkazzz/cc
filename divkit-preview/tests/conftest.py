@@ -39,10 +39,35 @@ SAMPLE_DIVKIT_JSON: dict = {
 }
 
 
+SAMPLE_IMAGE_DIVKIT_JSON: dict = {
+    "card": {
+        "log_id": "test_image",
+        "states": [
+            {
+                "state_id": 0,
+                "div": {
+                    "type": "image",
+                    "image_url": "https://placehold.co/200x200/orange/white/png",
+                    "width": {"type": "fixed", "value": 200},
+                    "height": {"type": "fixed", "value": 200},
+                    "background": [{"type": "solid", "color": "#EEEEEE"}],
+                },
+            }
+        ],
+    }
+}
+
+
 @pytest.fixture
 def sample_divkit_json() -> dict:
     """A minimal valid DivKit JSON."""
     return SAMPLE_DIVKIT_JSON.copy()
+
+
+@pytest.fixture
+def image_divkit_json() -> dict:
+    """A DivKit JSON with an image div."""
+    return SAMPLE_IMAGE_DIVKIT_JSON.copy()
 
 
 def _playwright_available() -> bool:

@@ -5,7 +5,7 @@ import json
 import pytest
 from aiohttp.test_utils import TestClient
 
-from tests.conftest import SAMPLE_DIVKIT_JSON
+from tests.conftest import SAMPLE_DIVKIT_JSON, SAMPLE_IMAGE_DIVKIT_JSON
 
 
 @pytest.mark.asyncio
@@ -72,6 +72,21 @@ async def test_preview_has_cache_header(aiohttp_client, app) -> None:
     )
     assert resp.status == 200
     assert resp.headers.get("Cache-Control") == "public, max-age=300"
+
+
+@pytest.mark.asyncio
+async def test_preview_image_div(aiohttp_client, app) -> None:
+    """POST with image div JSON returns 200 with valid PNG."""
+    client: TestClient = await aiohttp_client(app)
+    resp = await client.post(
+        "/preview.png",
+        json=SAMPLE_IMAGE_DIVKIT_JSON,
+    )
+    assert resp.status == 200
+    assert resp.content_type == "image/png"
+    body = await resp.read()
+    assert body[:4] == b"\x89PNG"
+    assert len(body) > 100
 
 
 @pytest.mark.asyncio
