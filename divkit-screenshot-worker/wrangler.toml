@@ -1,0 +1,20 @@
+name = "divkit-screenshot"
+main = "src/index.ts"
+compatibility_date = "2026-03-12"
+compatibility_flags = ["nodejs_compat"]
+
+[browser]
+binding = "BROWSER"
+
+[[r2_buckets]]
+binding = "SCREENSHOT_CACHE"
+bucket_name = "divkit-screenshots"
+
+[vars]
+DEFAULT_WIDTH = "375"
+DEFAULT_SCALE = "2"
+CACHE_TTL_SECONDS = "3600"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
