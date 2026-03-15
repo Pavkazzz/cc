@@ -18,3 +18,7 @@ CACHE_TTL_SECONDS = "3600"
 [[rules]]
 type = "Text"
 globs = ["**/*.html"]
+
+[[rules]]
+type = "Text"
+globs = ["**/*.txt"]

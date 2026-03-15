@@ -16,14 +16,16 @@ describe("buildHtml", () => {
     expect(html).not.toContain("{{DIVKIT_JSON}}");
   });
 
-  it("contains DivKit CSS link", () => {
+  it("contains inlined DivKit CSS", () => {
     const html = buildHtml(sampleJson, 375);
-    expect(html).toContain("@divkitframework/divkit/dist/client.css");
+    expect(html).not.toContain("{{DIVKIT_CSS}}");
+    expect(html).toContain("<style>");
   });
 
-  it("contains DivKit JS script", () => {
+  it("contains inlined DivKit JS", () => {
     const html = buildHtml(sampleJson, 375);
-    expect(html).toContain("@divkitframework/divkit/dist/browser.js");
+    expect(html).not.toContain("{{DIVKIT_JS}}");
+    expect(html).toContain("DivKit");
   });
 
   it("contains data-rendered signal", () => {
