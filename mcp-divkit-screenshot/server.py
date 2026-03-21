@@ -89,6 +89,7 @@ class ScreenshotService:
         divkit_json: dict[str, object],
         width: int = 375,
         scale: float = 2.0,
+        bgcolor: str = "#FFFFFF",
     ) -> bytes:
         """Render a DivKit layout and return a PNG screenshot."""
         if self._browser is None:
@@ -96,7 +97,7 @@ class ScreenshotService:
 
         async with self._semaphore:
             return await asyncio.wait_for(
-                self._do_capture(divkit_json, width, scale),
+                self._do_capture(divkit_json, width, scale, bgcolor),
                 timeout=10.0,
             )
 
@@ -105,15 +106,17 @@ class ScreenshotService:
         divkit_json: dict[str, object],
         width: int,
         scale: float,
+        bgcolor: str,
     ) -> bytes:
         json_script = (
             "<script>var DIVKIT_JSON = "
             + json.dumps(divkit_json, ensure_ascii=False)
             + ";</script>"
         )
+        bg_style = f"<style>body {{ background-color: {bgcolor}; }}</style>"
         html = self._html_template.replace(
             '<div id="root"></div>',
-            '<div id="root"></div>' + json_script,
+            bg_style + '<div id="root"></div>' + json_script,
         )
 
         context = await self._browser.new_context(  # type: ignore[union-attr]
@@ -153,6 +156,7 @@ async def render_divkit_screenshot(
     output: str,
     width: int = 375,
     scale: float = 2.0,
+    bgcolor: str = "#FFFFFF",
 ) -> str:
     """Render a DivKit JSON layout to a PNG screenshot.
 
@@ -161,6 +165,7 @@ async def render_divkit_screenshot(
         output: Path where the PNG screenshot will be saved.
         width: Viewport width in pixels (320-1440, default 375).
         scale: Device scale factor (1.0-3.0, default 2.0).
+        bgcolor: CSS background color (default "#FFFFFF").
     """
     if not (320 <= width <= 1440):
         return "Error: width must be between 320 and 1440"
@@ -180,7 +185,7 @@ async def render_divkit_screenshot(
         return "Error: JSON file must contain an object"
 
     service = await _ensure_service()
-    png_bytes = await service.capture(divkit_json, width=width, scale=scale)
+    png_bytes = await service.capture(divkit_json, width=width, scale=scale, bgcolor=bgcolor)
 
     output_path = Path(output).expanduser().resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
